@@ -1,0 +1,17 @@
+﻿@model IEnumerable<AIAssistant.Core.Models.Message>
+
+<h2>AI Assistant</h2>
+
+<div style="height:400px; overflow-y:scroll; border:1px solid gray; padding:10px;">
+    @foreach (var msg in Model)
+    {
+        <div style="margin-bottom:10px;">
+            <b>@(msg.IsUser ? "Tu" : "AI"):</b> @msg.Text
+        </div>
+    }
+</div>
+
+<form method="post" asp-action="Send">
+    <input type="text" name="message" style="width:80%;" />
+    <button type="submit">Send</button>
+</form>
