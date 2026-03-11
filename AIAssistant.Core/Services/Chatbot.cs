@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Threading.Tasks;
 using AIAssistant.Core.Interfaces;
 
 namespace AIAssistant.Core.Services
@@ -13,14 +12,17 @@ namespace AIAssistant.Core.Services
             _plugins = plugins;
         }
 
-        public async Task<string> HandleMessageAsync(string input)
+        public async IAsyncEnumerable<string> HandleMessageStream(string input, double temperature)
         {
             foreach (var plugin in _plugins)
             {
-                return await plugin.Process(input);
-            }
+                await foreach (var token in plugin.ProcessStream(input, temperature))
+                {
+                    yield return token;
+                }
 
-            return "No plugin available.";
+                yield break;
+            }
         }
     }
 }

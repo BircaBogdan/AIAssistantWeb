@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using AIAssistant.Core.Interfaces;
 using AIAssistant.Core.Services;
 
@@ -15,9 +15,12 @@ namespace AIAssistant.Core.Plugins
 
         public string Name => "Ollama";
 
-        public async Task<string> Process(string input)
+        public async IAsyncEnumerable<string> ProcessStream(string input, double temperature)
         {
-            return await _ollamaService.GenerateResponseAsync(input);
+            await foreach (var token in _ollamaService.StreamResponseAsync(input, temperature))
+            {
+                yield return token;
+            }
         }
     }
 }

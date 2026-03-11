@@ -1,10 +1,11 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace AIAssistant.Core.Interfaces
 {
     public interface IPlugin
     {
         string Name { get; }
-        Task<string> Process(string input);
+
+        IAsyncEnumerable<string> ProcessStream(string input, double temperature);
     }
 }

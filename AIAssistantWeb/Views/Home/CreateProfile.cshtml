@@ -1,0 +1,91 @@
+﻿@{
+    ViewData["Title"] = "Create Assistant Profile";
+}
+
+<div class="container mt-4">
+
+    <h2>Create Assistant Profile</h2>
+
+    <div class="card mt-3">
+        <div class="card-body">
+
+            <form asp-controller="Home" asp-action="CreateProfile" method="post">
+
+                <div class="form-group mb-3">
+                    <label>Name</label>
+
+                    <input type="text"
+                           name="name"
+                           class="form-control"
+                           placeholder="Example: Math Assistant"
+                           required />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label>System Prompt</label>
+
+                    <input type="text"
+                           name="systemPrompt"
+                           class="form-control"
+                           placeholder="Example: You are a helpful math assistant"
+                           required />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label>Temperature (0 - 1)</label>
+
+                    <input type="number"
+                           name="temperature"
+                           step="0.1"
+                           min="0"
+                           max="1"
+                           value="0.5"
+                           class="form-control"
+                           required />
+                </div>
+
+                <div class="form-group mb-3">
+                    <label>Response Style</label>
+
+                    <select name="strategy" class="form-control">
+
+                        <option value="formal">
+                            Formal Assistant
+                        </option>
+
+                        <option value="friendly">
+                            Friendly Assistant
+                        </option>
+
+                    </select>
+                </div>
+
+                <div class="form-check mb-3">
+
+                    <input type="checkbox"
+                           class="form-check-input"
+                           name="plugins"
+                           value="Ollama"
+                           checked />
+
+                    <label class="form-check-label">
+                        Enable Ollama Plugin
+                    </label>
+
+                </div>
+
+                <button type="submit" class="btn btn-success">
+                    Create Profile
+                </button>
+
+                <a asp-controller="Home" asp-action="Index"
+                   class="btn btn-secondary">
+                    Cancel
+                </a>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>

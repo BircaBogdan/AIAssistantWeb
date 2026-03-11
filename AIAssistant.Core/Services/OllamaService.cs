@@ -1,6 +1,8 @@
 ﻿using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace AIAssistant.Core.Services
@@ -14,36 +16,48 @@ namespace AIAssistant.Core.Services
             _httpClient = new HttpClient();
         }
 
-        public async Task<string> GenerateResponseAsync(string prompt)
+        public async IAsyncEnumerable<string> StreamResponseAsync(string prompt, double temperature)
         {
             var requestBody = new
             {
                 model = "gemma3:1b",
                 prompt = prompt,
-                stream = false
+                stream = true,
+                options = new
+                {
+                    temperature = temperature
+                }
             };
 
-            var content = new StringContent(
-                JsonSerializer.Serialize(requestBody),
-                Encoding.UTF8,
-                "application/json");
-
-            var response = await _httpClient.PostAsync(
-                "http://localhost:11434/api/generate",
-                content);
-
-            if (!response.IsSuccessStatusCode)
+            var request = new HttpRequestMessage(HttpMethod.Post, "http://localhost:11434/api/generate")
             {
-                return $"Ollama error: {response.StatusCode}";
+                Content = new StringContent(
+                    JsonSerializer.Serialize(requestBody),
+                    Encoding.UTF8,
+                    "application/json")
+            };
+
+            var response = await _httpClient.SendAsync(
+                request,
+                HttpCompletionOption.ResponseHeadersRead);
+
+            var stream = await response.Content.ReadAsStreamAsync();
+            var reader = new StreamReader(stream);
+
+            while (!reader.EndOfStream)
+            {
+                var line = await reader.ReadLineAsync();
+
+                if (string.IsNullOrWhiteSpace(line))
+                    continue;
+
+                var json = JsonDocument.Parse(line);
+
+                if (json.RootElement.TryGetProperty("response", out var token))
+                {
+                    yield return token.GetString();
+                }
             }
-
-            var json = await response.Content.ReadAsStringAsync();
-
-            using JsonDocument doc = JsonDocument.Parse(json);
-
-            return doc.RootElement
-                .GetProperty("response")
-                .GetString();
         }
     }
 }

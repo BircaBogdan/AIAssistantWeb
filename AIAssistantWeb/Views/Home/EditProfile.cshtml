@@ -1,0 +1,41 @@
+﻿@model AIAssistant.Core.Models.AssistantProfile
+
+<h2>Edit Assistant</h2>
+
+<form method="post">
+
+	<input type="hidden" name="originalName" value="@Model.Name" />
+
+	<label>Name</label>
+	<br />
+	<input type="text" name="name" value="@Model.Name" />
+	<br /><br />
+
+	<label>System Prompt</label>
+	<br />
+	<input type="text" name="systemPrompt" value="@Model.SystemPrompt" />
+	<br /><br />
+
+	<label>Temperature</label>
+	<br />
+	<input type="number" step="0.1" name="temperature" value="@Model.Temperature" />
+	<br /><br />
+
+	<label>Strategy</label>
+	<br />
+
+	<select name="strategy">
+
+		<option value="formal">Formal</option>
+
+		<option value="friendly">Friendly</option>
+
+	</select>
+
+	<br /><br />
+
+	<button type="submit">
+		Save
+	</button>
+
+</form>

@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using AIAssistant.Core.Services;
 using AIAssistant.Core.Models;
+using AIAssistant.Core.Interfaces;
+using AIAssistant.Core.Factories;
 
 namespace AIAssistantWeb.Controllers
 {
@@ -9,37 +11,43 @@ namespace AIAssistantWeb.Controllers
         private readonly Chatbot _bot;
         private readonly ChatHistory _history;
 
-        public ChatController(Chatbot bot, ChatHistory history)
+        public ChatController(ChatHistory history)
         {
-            _bot = bot;
             _history = history;
+
+            IAssistantFactory factory = new FriendlyAssistantFactory();
+
+            IPlugin plugin = factory.CreatePlugin();
+
+            var plugins = new List<IPlugin> { plugin };
+
+            _bot = new Chatbot(plugins);
         }
 
         public IActionResult Index()
         {
+            ViewBag.Profiles = HomeController.Profiles;
+
             return View(_history.GetAll());
         }
 
         [HttpPost]
-        public async Task<IActionResult> Send(string message)
+        public async Task Stream(string message, string assistantName)
         {
-            _history.Add(new Message
+            var profile = HomeController.Profiles
+                .FirstOrDefault(p => p.Name == assistantName);
+
+            double temperature = profile?.Temperature ?? 0.5;
+
+            Response.Headers.Add("Content-Type", "text/plain");
+
+            await foreach (var token in _bot.HandleMessageStream(message, temperature))
             {
-                Text = message,
-                IsUser = true,
-                Timestamp = DateTime.Now
-            });
+                await Response.WriteAsync(token);
+                await Response.Body.FlushAsync();
+            }
 
-            var response = await _bot.HandleMessageAsync(message);
-
-            _history.Add(new Message
-            {
-                Text = response,
-                IsUser = false,
-                Timestamp = DateTime.Now
-            });
-
-            return RedirectToAction("Index");
+            GlobalMetrics.Instance.IncrementMessages();
         }
     }
 }

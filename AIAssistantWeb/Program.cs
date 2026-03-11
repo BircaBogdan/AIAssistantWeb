@@ -1,15 +1,17 @@
-﻿using AIAssistant.Core.Interfaces;
-using AIAssistant.Core.Services;
-using AIAssistant.Core.Plugins;
+﻿using AIAssistant.Core.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// HttpClient pentru OllamaService
 builder.Services.AddHttpClient();
-builder.Services.AddSingleton<OllamaService>();
-builder.Services.AddSingleton<IPlugin, OllamaPlugin>();
-builder.Services.AddSingleton<ChatHistory>();
-builder.Services.AddSingleton<Chatbot>();
 
+// Service pentru comunicare cu Ollama
+builder.Services.AddSingleton<OllamaService>();
+
+// Istoric conversație
+builder.Services.AddSingleton<ChatHistory>();
+
+// MVC
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
