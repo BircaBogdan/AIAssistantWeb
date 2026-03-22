@@ -75,9 +75,7 @@
     <!-- PAGE CONTENT -->
     <main class="flex-fill">
         <div class="container pb-5">
-
             @RenderBody()
-
         </div>
     </main>
 
@@ -90,9 +88,12 @@
 
             <br />
 
+            <!-- COUNTER LIVE -->
             <strong>
                 Total Messages Processed:
-                @GlobalMetrics.Instance.TotalMessagesProcessed
+                <span id="msgCount">
+                    @GlobalMetrics.Instance.TotalMessagesProcessed
+                </span>
             </strong>
 
         </div>

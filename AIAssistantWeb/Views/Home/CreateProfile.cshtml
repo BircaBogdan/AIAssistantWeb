@@ -11,6 +11,7 @@
 
             <form asp-controller="Home" asp-action="CreateProfile" method="post">
 
+                <!-- NAME -->
                 <div class="form-group mb-3">
                     <label>Name</label>
 
@@ -21,16 +22,66 @@
                            required />
                 </div>
 
+                <!-- SYSTEM PROMPT -->
                 <div class="form-group mb-3">
-                    <label>System Prompt</label>
+                    <label>Base System Prompt</label>
 
                     <input type="text"
                            name="systemPrompt"
                            class="form-control"
-                           placeholder="Example: You are a helpful math assistant"
+                           placeholder="Example: You are a helpful assistant"
                            required />
                 </div>
 
+                <!-- COMPOSITE: MODULES -->
+                <div class="form-group mb-3">
+                    <label>Modular Behavior (Composite Pattern)</label>
+
+                    <div class="form-check">
+                        <input class="form-check-input"
+                               type="checkbox"
+                               name="modules"
+                               value="RO" />
+
+                        <label class="form-check-label">
+                            Răspunde doar în Română
+                        </label>
+                    </div>
+
+                    <div class="form-check">
+                        <input class="form-check-input"
+                               type="checkbox"
+                               name="modules"
+                               value="MD" />
+
+                        <label class="form-check-label">
+                            Formatează codul în Markdown
+                        </label>
+                    </div>
+
+                    <div class="form-check">
+                        <input class="form-check-input"
+                               type="checkbox"
+                               name="modules"
+                               value="SARCASTIC" />
+
+                        <label class="form-check-label">
+                            Fii sarcastic
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 🔌 ADAPTER: AI PROVIDER -->
+                <div class="form-group mb-3">
+                    <label>AI Provider (Adapter Pattern)</label>
+
+                    <select name="provider" class="form-control">
+                        <option value="Ollama">Ollama</option>
+                        <option value="FakeAI">Fake AI</option>
+                    </select>
+                </div>
+
+                <!-- TEMPERATURE -->
                 <div class="form-group mb-3">
                     <label>Temperature (0 - 1)</label>
 
@@ -44,11 +95,11 @@
                            required />
                 </div>
 
+                <!-- STRATEGY -->
                 <div class="form-group mb-3">
                     <label>Response Style</label>
 
                     <select name="strategy" class="form-control">
-
                         <option value="formal">
                             Formal Assistant
                         </option>
@@ -56,10 +107,10 @@
                         <option value="friendly">
                             Friendly Assistant
                         </option>
-
                     </select>
                 </div>
 
+                <!-- PLUGIN -->
                 <div class="form-check mb-3">
 
                     <input type="checkbox"
@@ -74,11 +125,13 @@
 
                 </div>
 
+                <!-- BUTTONS -->
                 <button type="submit" class="btn btn-success">
                     Create Profile
                 </button>
 
-                <a asp-controller="Home" asp-action="Index"
+                <a asp-controller="Home"
+                   asp-action="Index"
                    class="btn btn-secondary">
                     Cancel
                 </a>

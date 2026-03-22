@@ -1,9 +1,17 @@
 ﻿using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using AIAssistantWeb.Models;
+
 using AIAssistant.Core.Builders;
 using AIAssistant.Core.Strategies;
 using AIAssistant.Core.Models;
+
+// COMPOSITE
+using AIAssistant.Core.PromptComposite;
+
+// ADAPTER
+using AIAssistant.Core.Adapters;
+using AIAssistant.Core.Services;
 
 namespace AIAssistantWeb.Controllers
 {
@@ -11,7 +19,6 @@ namespace AIAssistantWeb.Controllers
     {
         private readonly ILogger<HomeController> _logger;
 
-        // lista globală de profiles create cu Builder
         public static List<AssistantProfile> Profiles = new();
 
         public HomeController(ILogger<HomeController> logger)
@@ -22,7 +29,6 @@ namespace AIAssistantWeb.Controllers
         public IActionResult Index()
         {
             ViewBag.Profiles = Profiles;
-
             return View();
         }
 
@@ -36,10 +42,17 @@ namespace AIAssistantWeb.Controllers
             return View();
         }
 
+        // CREATE PROFILE (Composite + Adapter)
         [HttpPost]
-        public IActionResult CreateProfile(string name, string systemPrompt, string strategy)
+        public IActionResult CreateProfile(
+            string name,
+            string systemPrompt,
+            string strategy,
+            List<string> modules,
+            string provider
+        )
         {
-            // citire manuală temperature
+            // temperature
             var tempString = Request.Form["temperature"].ToString();
 
             double temperature = double.Parse(
@@ -47,6 +60,40 @@ namespace AIAssistantWeb.Controllers
                 System.Globalization.CultureInfo.InvariantCulture
             );
 
+            // COMPOSITE: build system prompt
+            var composite = new CompositePrompt();
+
+            composite.Add(new SimpleModule(systemPrompt));
+
+            if (modules != null)
+            {
+                foreach (var module in modules)
+                {
+                    switch (module)
+                    {
+                        case "RO":
+                            composite.Add(new SimpleModule("\"Răspunde EXCLUSIV în limba română. Nu folosi nicio altă limbă. Dacă întrebarea este în altă limbă, răspunde tot în română.\""));
+                            break;
+
+                        case "MD":
+                            composite.Add(new SimpleModule("Formatează codul folosind Markdown."));
+                            break;
+
+                        case "SARCASTIC":
+                            composite.Add(new SimpleModule("Răspunde într-un mod sarcastic."));
+                            break;
+                    }
+                }
+            }
+
+            string finalPrompt = composite.GetPromptText();
+
+            // ADAPTER: select AI provider
+            IAIService ai = provider == "Ollama"
+                ? new OllamaAdapter()
+                : new FakeAIAdapter();
+
+            // BUILDER
             var builder = new CustomAssistantBuilder();
 
             if (strategy == "formal")
@@ -56,9 +103,9 @@ namespace AIAssistantWeb.Controllers
 
             var profile = builder
                 .SetName(name)
-                .SetSystemPrompt(systemPrompt)
+                .SetSystemPrompt(finalPrompt)
                 .SetTemperature(temperature)
-                .AddPlugin("Ollama")
+                .AddPlugin(provider)
                 .Build();
 
             Profiles.Add(profile);
@@ -66,7 +113,7 @@ namespace AIAssistantWeb.Controllers
             return RedirectToAction("Index");
         }
 
-        // PROTOTYPE - Clone profile
+        // PROTOTYPE
         public IActionResult CloneProfile(string name)
         {
             var profile = Profiles.FirstOrDefault(p => p.Name == name);
@@ -74,14 +121,13 @@ namespace AIAssistantWeb.Controllers
             if (profile != null)
             {
                 var clone = profile.Clone();
-
                 Profiles.Add(clone);
             }
 
             return RedirectToAction("Index");
         }
 
-        // OPEN EDIT PAGE
+        // EDIT PAGE
         public IActionResult EditProfile(string name)
         {
             var profile = Profiles.FirstOrDefault(p => p.Name == name);
@@ -94,13 +140,17 @@ namespace AIAssistantWeb.Controllers
 
         // SAVE EDIT
         [HttpPost]
-        public IActionResult EditProfile(string originalName, string name, string systemPrompt, string strategy)
+        public IActionResult EditProfile(
+            string originalName,
+            string name,
+            string systemPrompt,
+            string strategy
+        )
         {
             var profile = Profiles.FirstOrDefault(p => p.Name == originalName);
 
             if (profile != null)
             {
-                // citire manuală temperature
                 var tempString = Request.Form["temperature"].ToString();
 
                 double temperature = double.Parse(

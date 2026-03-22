@@ -101,62 +101,87 @@
 
 <script>
 
-	const chatBox=document.getElementById("chatBox")
+	const chatBox = document.getElementById("chatBox")
 
-	function scrollBottom(){
-	chatBox.scrollTop=chatBox.scrollHeight
+	function scrollBottom() {
+		chatBox.scrollTop = chatBox.scrollHeight
 	}
 
-	async function sendMessage(){
-
-	const message=document.getElementById("messageInput").value
-	const assistant=document.getElementById("assistantName").value
-
-	if(!message) return
-
-	const userDiv=document.createElement("div")
-	userDiv.className="message-user"
-	userDiv.innerHTML=`<div class="bubble-user">${message}</div>`
-	chatBox.appendChild(userDiv)
-
-	const aiDiv=document.createElement("div")
-	aiDiv.className="message-ai"
-	aiDiv.innerHTML=`<div class="bubble-ai" id="aiResponse"></div>`
-	chatBox.appendChild(aiDiv)
-
-	scrollBottom()
-
-	const response=await fetch("/Chat/Stream",{
-	method:"POST",
-	headers:{
-	"Content-Type":"application/x-www-form-urlencoded"
-	},
-	body:`message=${encodeURIComponent(message)}&assistantName=${assistant}`
+	// ENTER = SEND
+	document.getElementById("messageInput")
+	.addEventListener("keypress", function (e) {
+		if (e.key === "Enter") {
+			e.preventDefault()
+			sendMessage()
+		}
 	})
 
-	const reader=response.body.getReader()
-	const decoder=new TextDecoder()
+	async function sendMessage() {
 
-	let result=""
+		const message = document.getElementById("messageInput").value
+		const assistant = document.getElementById("assistantName").value
 
-	while(true){
+		if (!message) return
 
-	const {done,value}=await reader.read()
+		// USER
+		const userDiv = document.createElement("div")
+		userDiv.className = "message-user"
+		userDiv.innerHTML = `<div class="bubble-user">${message}</div>`
+		chatBox.appendChild(userDiv)
 
-	if(done) break
+		document.getElementById("messageInput").value = ""
 
-	const chunk=decoder.decode(value)
+		// LOADING
+		const loadingDiv = document.createElement("div")
+		loadingDiv.className = "message-ai"
+		loadingDiv.innerHTML = `<div class="bubble-ai">Typing...</div>`
+		chatBox.appendChild(loadingDiv)
 
-	result+=chunk
+		scrollBottom()
 
-	document.getElementById("aiResponse").innerText=result
+		const response = await fetch("/Chat/Stream", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/x-www-form-urlencoded"
+			},
+			body: `message=${encodeURIComponent(message)}&assistantName=${assistant}`
+		})
 
-	scrollBottom()
+		const reader = response.body.getReader()
+		const decoder = new TextDecoder()
 
-	}
+		let result = ""
 
-	document.getElementById("messageInput").value=""
+		// REMOVE LOADING
+		chatBox.removeChild(loadingDiv)
 
+		const aiDiv = document.createElement("div")
+		aiDiv.className = "message-ai"
+
+		const bubble = document.createElement("div")
+		bubble.className = "bubble-ai"
+
+		aiDiv.appendChild(bubble)
+		chatBox.appendChild(aiDiv)
+
+		while (true) {
+
+			const { done, value } = await reader.read()
+			if (done) break
+
+			const chunk = decoder.decode(value)
+
+			result += chunk
+			bubble.innerText = result
+
+			scrollBottom()
+		}
+
+		// UPDATE COUNTER LIVE
+		let counter = document.getElementById("msgCount")
+		if (counter) {
+			counter.innerText = parseInt(counter.innerText || "0") + 1
+		}
 	}
 
 	scrollBottom()
