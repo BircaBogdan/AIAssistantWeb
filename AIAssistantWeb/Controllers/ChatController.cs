@@ -40,13 +40,10 @@ namespace AIAssistantWeb.Controllers
 
             double temperature = profile.Temperature;
 
-            // Adapter (FIXED)
             IAIService ai = new OllamaAdapter();
 
-            // Facade
             var facade = new ChatFacade(ai, _history);
 
-            // STREAM RESPONSE
             Response.Headers.Add("Content-Type", "text/plain");
 
             await foreach (var token in facade.SendMessageStream(message, temperature))
@@ -54,6 +51,13 @@ namespace AIAssistantWeb.Controllers
                 await Response.WriteAsync(token);
                 await Response.Body.FlushAsync();
             }
+        }
+
+        // 🔥 NOU – pentru counter REAL
+        [HttpGet]
+        public IActionResult GetMessageCount()
+        {
+            return Content(GlobalMetrics.Instance.TotalMessages.ToString());
         }
     }
 }

@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace AIAssistant.Core.Services
 {
@@ -12,6 +8,9 @@ namespace AIAssistant.Core.Services
         private static readonly object _lock = new object();
 
         public int TotalMessagesProcessed { get; private set; }
+
+        // 🔥 ALIAS pentru UI (fără să stricăm codul existent)
+        public int TotalMessages => TotalMessagesProcessed;
 
         private GlobalMetrics()
         {

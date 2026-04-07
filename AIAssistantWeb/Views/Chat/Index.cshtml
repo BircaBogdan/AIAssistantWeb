@@ -50,20 +50,22 @@
 		margin-top: 10px;
 	}
 
-	/* CODE BLOCK STYLE */
 	pre {
 		background: #1e1e1e;
-		color: #dcdcdc;
-		padding: 10px;
-		border-radius: 8px;
+		color: #ffffff;
+		padding: 15px;
+		border-radius: 10px;
 		overflow-x: auto;
-		font-family: monospace;
+		font-family: Consolas, monospace;
+		font-size: 14px;
+		line-height: 1.5;
 	}
 
 	code {
-		background: #eee;
-		padding: 2px 4px;
-		border-radius: 4px;
+		background: #2d2d2d;
+		color: #00ffcc;
+		padding: 3px 6px;
+		border-radius: 5px;
 	}
 
 </style>
@@ -77,11 +79,9 @@
 		@foreach (var msg in Model)
 		{
 			<div class="@(msg.IsUser ? "message-user" : "message-ai")">
-
 				<div class="@(msg.IsUser ? "bubble-user" : "bubble-ai")">
-					@Html.Raw(msg.Text) <!-- 🔥 IMPORTANT -->
+					@Html.Raw(msg.Text)
 				</div>
-
 			</div>
 		}
 
@@ -90,7 +90,6 @@
 	<div class="chat-controls">
 
 		<select id="assistantName" class="form-control mb-2">
-
 			@if (ViewBag.Profiles != null)
 			{
 				foreach (var profile in ViewBag.Profiles)
@@ -98,21 +97,25 @@
 					<option value="@profile.Name">@profile.Name</option>
 				}
 			}
-
 		</select>
 
 		<div class="input-group">
-
 			<input id="messageInput" class="form-control" placeholder="Type a message...">
-
 			<button onclick="sendMessage()" class="btn btn-primary">
 				Send
 			</button>
-
 		</div>
 
 	</div>
 
+</div>
+
+<!-- 🔥 COUNTER -->
+<div style="margin-top:20px; text-align:center;">
+	<b>
+		Total Messages Processed:
+		<span id="msgCount">@AIAssistant.Core.Services.GlobalMetrics.Instance.TotalMessages</span>
+	</b>
 </div>
 
 <script>
@@ -123,7 +126,6 @@
 		chatBox.scrollTop = chatBox.scrollHeight
 	}
 
-	// ENTER = SEND
 	document.getElementById("messageInput")
 	.addEventListener("keypress", function (e) {
 		if (e.key === "Enter") {
@@ -132,6 +134,16 @@
 		}
 	})
 
+	async function updateCounter() {
+		const res = await fetch("/Chat/GetMessageCount")
+		const count = await res.text()
+
+		const counter = document.getElementById("msgCount")
+		if (counter) {
+			counter.innerText = count
+		}
+	}
+
 	async function sendMessage() {
 
 		const message = document.getElementById("messageInput").value
@@ -139,7 +151,6 @@
 
 		if (!message) return
 
-		// USER MESSAGE
 		const userDiv = document.createElement("div")
 		userDiv.className = "message-user"
 		userDiv.innerHTML = `<div class="bubble-user">${message}</div>`
@@ -147,7 +158,6 @@
 
 		document.getElementById("messageInput").value = ""
 
-		// LOADING
 		const loadingDiv = document.createElement("div")
 		loadingDiv.className = "message-ai"
 		loadingDiv.innerHTML = `<div class="bubble-ai">Typing...</div>`
@@ -168,7 +178,6 @@
 
 		let result = ""
 
-		// REMOVE LOADING
 		chatBox.removeChild(loadingDiv)
 
 		const aiDiv = document.createElement("div")
@@ -189,10 +198,18 @@
 
 			result += chunk
 
-			bubble.innerHTML = result
+			if (result.includes("===DECORATED===")) {
+				const parts = result.split("===DECORATED===")
+				bubble.innerHTML = parts[1]
+			} else {
+				bubble.innerText = result
+			}
 
 			scrollBottom()
 		}
+
+		// 🔥 ACTUALIZĂM COUNTER REAL
+		await updateCounter()
 
 		scrollBottom()
 	}

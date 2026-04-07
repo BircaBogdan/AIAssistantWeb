@@ -13,7 +13,6 @@ namespace AIAssistant.Core.Facades
 
         public ChatFacade(IAIService ai, ChatHistory history)
         {
-            // Proxy aplicat
             _ai = new ChatRateLimitProxy(ai, 20);
             _history = history;
         }
@@ -29,30 +28,22 @@ namespace AIAssistant.Core.Facades
 
             string fullResponse = "";
 
-            // Decorator chain
+            // STREAM NORMAL
+            await foreach (var token in _ai.SendMessageStream(message, temperature))
+            {
+                fullResponse += token;
+                yield return token; // vezi text live
+            }
+
+            // DECORATOR aplicat la final
             IResponseDecorator decorator = new PlainResponse();
             decorator = new MarkdownDecorator(decorator);
             decorator = new TimestampDecorator(decorator);
 
-            bool firstToken = true;
-
-            await foreach (var token in _ai.SendMessageStream(message, temperature))
-            {
-                fullResponse += token;
-
-                if (firstToken)
-                {
-                    // aplicăm decorator DOAR pe primul token (vizibil în UI)
-                    yield return decorator.Process(token);
-                    firstToken = false;
-                }
-                else
-                {
-                    yield return token;
-                }
-            }
-
             var decoratedResponse = decorator.Process(fullResponse);
+
+            // 🔥 trimitem versiunea decorată (rescrie UI)
+            yield return "\n\n===DECORATED===\n\n" + decoratedResponse;
 
             _history.Add(new Message
             {

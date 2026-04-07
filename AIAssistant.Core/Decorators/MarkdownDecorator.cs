@@ -10,6 +10,11 @@ namespace AIAssistant.Core.Decorators
         {
             var processed = base.Process(response);
 
+            // 🔥 FIX: normalizează output AI (uneori e "``` c code")
+            processed = processed.Replace("```c ", "```c\n");
+            processed = processed.Replace("``` ", "```\n");
+
+            // 🔥 CODE BLOCK (corect + tolerant)
             processed = Regex.Replace(
                 processed,
                 @"```[a-zA-Z]*\s*(.*?)```",
@@ -21,11 +26,11 @@ namespace AIAssistant.Core.Decorators
                 RegexOptions.Singleline
             );
 
+            // 🔥 FALLBACK: detectare cod dacă AI nu dă markdown
             if (!processed.Contains("<pre><code>") &&
                 (processed.Contains("#include") || processed.Contains("int main")))
             {
                 processed = $"<pre><code>{processed}</code></pre>";
-                return processed;
             }
 
             // inline code
@@ -36,6 +41,13 @@ namespace AIAssistant.Core.Decorators
 
             // italic
             processed = Regex.Replace(processed, @"\*(.*?)\*", "<i>$1</i>");
+
+            // 🔥 NEWLINE → <br> (dar NU în <pre>)
+            processed = Regex.Replace(
+                processed,
+                @"(?![^<]*</pre>)\n",
+                "<br>"
+            );
 
             return processed;
         }
