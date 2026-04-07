@@ -50,6 +50,22 @@
 		margin-top: 10px;
 	}
 
+	/* CODE BLOCK STYLE */
+	pre {
+		background: #1e1e1e;
+		color: #dcdcdc;
+		padding: 10px;
+		border-radius: 8px;
+		overflow-x: auto;
+		font-family: monospace;
+	}
+
+	code {
+		background: #eee;
+		padding: 2px 4px;
+		border-radius: 4px;
+	}
+
 </style>
 
 <div class="chat-container">
@@ -63,7 +79,7 @@
 			<div class="@(msg.IsUser ? "message-user" : "message-ai")">
 
 				<div class="@(msg.IsUser ? "bubble-user" : "bubble-ai")">
-					@msg.Text
+					@Html.Raw(msg.Text) <!-- 🔥 IMPORTANT -->
 				</div>
 
 			</div>
@@ -123,7 +139,7 @@
 
 		if (!message) return
 
-		// USER
+		// USER MESSAGE
 		const userDiv = document.createElement("div")
 		userDiv.className = "message-user"
 		userDiv.innerHTML = `<div class="bubble-user">${message}</div>`
@@ -172,16 +188,13 @@
 			const chunk = decoder.decode(value)
 
 			result += chunk
-			bubble.innerText = result
+
+			bubble.innerHTML = result
 
 			scrollBottom()
 		}
 
-		// UPDATE COUNTER LIVE
-		let counter = document.getElementById("msgCount")
-		if (counter) {
-			counter.innerText = parseInt(counter.innerText || "0") + 1
-		}
+		scrollBottom()
 	}
 
 	scrollBottom()
