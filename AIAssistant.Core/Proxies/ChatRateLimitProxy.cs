@@ -12,7 +12,6 @@ namespace AIAssistant.Core.Proxies
 
         private readonly int _limit;
 
-        // OBSERVER
         private readonly MessageLimitSubject _subject = new();
         private readonly UserAlertObserver _observer = new();
 
@@ -21,42 +20,46 @@ namespace AIAssistant.Core.Proxies
             _realService = realService;
             _limit = limit;
 
-            // attach observer
             _subject.Attach(_observer);
         }
 
+        // metoda cerută de interfață (OBLIGATORIE)
         public async IAsyncEnumerable<string> SendMessageStream(string message, double temperature)
         {
-            if (_messageCount >= _limit)
+            await foreach (var token in SendMessageStream(message, temperature, false))
             {
-                yield return "\n\n🚫 LIMITĂ ATINSĂ (20 mesaje gratuite)\n";
-                yield break;
-            }
-
-            _messageCount++;
-
-            _subject.SetMessageCount(_messageCount);
-
-            int remaining = _limit - _messageCount;
-
-            // TRIMITEM DOAR O SINGURĂ DATĂ
-            yield return $"(Mesaje rămase: {remaining})\n\n";
-
-            bool first = true;
-
-            await foreach (var token in _realService.SendMessageStream(message, temperature))
-            {
-                // prevenim dubluri
-                if (first)
-                {
-                    first = false;
-                }
-
                 yield return token;
             }
         }
 
-        // expus pentru controller
+        // metoda extinsă (pentru regenerate)
+        public async IAsyncEnumerable<string> SendMessageStream(string message, double temperature, bool isRegenerate)
+        {
+            if (!isRegenerate)
+            {
+                if (_messageCount >= _limit)
+                {
+                    yield return "\n\n🚫 LIMITĂ ATINSĂ (20 mesaje gratuite)\n";
+                    yield break;
+                }
+
+                _messageCount++;
+                _subject.SetMessageCount(_messageCount);
+            }
+
+            int remaining = _limit - _messageCount;
+
+            if (!isRegenerate)
+            {
+                yield return $"(Mesaje rămase: {remaining})\n\n";
+            }
+
+            await foreach (var token in _realService.SendMessageStream(message, temperature))
+            {
+                yield return token;
+            }
+        }
+
         public string? GetAlert()
         {
             return _observer.AlertMessage;

@@ -17,32 +17,44 @@ namespace AIAssistant.Core.Facades
             _history = history;
         }
 
-        public async IAsyncEnumerable<string> SendMessageStream(string message, double temperature)
+        public async IAsyncEnumerable<string> SendMessageStream(string message, double temperature, bool isRegenerate = false)
         {
-            _history.Add(new Message
+            if (!isRegenerate)
             {
-                Text = message,
-                Timestamp = DateTime.Now,
-                IsUser = true
-            });
+                _history.Add(new Message
+                {
+                    Text = message,
+                    Timestamp = DateTime.Now,
+                    IsUser = true
+                });
+            }
 
             string fullResponse = "";
 
-            // STREAM NORMAL
-            await foreach (var token in _ai.SendMessageStream(message, temperature))
+            // IMPORTANT FIX
+            if (_ai is ChatRateLimitProxy proxy)
             {
-                fullResponse += token;
-                yield return token;
+                await foreach (var token in proxy.SendMessageStream(message, temperature, isRegenerate))
+                {
+                    fullResponse += token;
+                    yield return token;
+                }
+            }
+            else
+            {
+                await foreach (var token in _ai.SendMessageStream(message, temperature))
+                {
+                    fullResponse += token;
+                    yield return token;
+                }
             }
 
-            // DECORATOR aplicat la final
             IResponseDecorator decorator = new PlainResponse();
             decorator = new MarkdownDecorator(decorator);
             decorator = new TimestampDecorator(decorator);
 
             var decoratedResponse = decorator.Process(fullResponse);
 
-            // trimitem versiunea decorată (rescrie UI)
             yield return "\n\n===DECORATED===\n\n" + decoratedResponse;
 
             _history.Add(new Message
@@ -52,7 +64,10 @@ namespace AIAssistant.Core.Facades
                 IsUser = false
             });
 
-            GlobalMetrics.Instance.IncrementMessages();
+            if (!isRegenerate)
+            {
+                GlobalMetrics.Instance.IncrementMessages();
+            }
         }
     }
 }

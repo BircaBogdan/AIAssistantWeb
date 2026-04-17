@@ -29,7 +29,6 @@ namespace AIAssistantWeb.Controllers
         [HttpPost]
         public async Task Stream(string message, string assistantName)
         {
-            // salvăm pentru regenerate
             HttpContext.Session.SetString("lastMessage", message);
             HttpContext.Session.SetString("assistantName", assistantName);
 
@@ -55,6 +54,7 @@ namespace AIAssistantWeb.Controllers
                 facade,
                 message,
                 temperature,
+                false, // NORMAL
                 async token =>
                 {
                     await Response.WriteAsync(token);
@@ -91,6 +91,7 @@ namespace AIAssistantWeb.Controllers
                 facade,
                 message,
                 temperature,
+                true, // REGENERATE (FREE)
                 async token =>
                 {
                     await Response.WriteAsync(token);
