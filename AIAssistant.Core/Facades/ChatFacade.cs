@@ -13,7 +13,7 @@ namespace AIAssistant.Core.Facades
 
         public ChatFacade(IAIService ai, ChatHistory history)
         {
-            _ai = new ChatRateLimitProxy(ai, 20);
+            _ai = ai;
             _history = history;
         }
 
@@ -32,7 +32,7 @@ namespace AIAssistant.Core.Facades
             await foreach (var token in _ai.SendMessageStream(message, temperature))
             {
                 fullResponse += token;
-                yield return token; // vezi text live
+                yield return token;
             }
 
             // DECORATOR aplicat la final
@@ -42,7 +42,7 @@ namespace AIAssistant.Core.Facades
 
             var decoratedResponse = decorator.Process(fullResponse);
 
-            // 🔥 trimitem versiunea decorată (rescrie UI)
+            // trimitem versiunea decorată (rescrie UI)
             yield return "\n\n===DECORATED===\n\n" + decoratedResponse;
 
             _history.Add(new Message

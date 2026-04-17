@@ -74,6 +74,13 @@
 
 	<h2>AI Assistant</h2>
 
+	@if (ViewBag.Alert != null)
+	{
+		<div class="alert alert-warning">
+			@ViewBag.Alert
+		</div>
+	}
+
 	<div id="chatBox" class="chat-box">
 
 		@foreach (var msg in Model)
@@ -106,11 +113,19 @@
 			</button>
 		</div>
 
+		<button onclick="regenerate()" class="btn btn-warning" style="margin-top:10px;">
+			Regenerate
+		</button>
+
+		<form method="post" asp-action="Clear" style="margin-top:5px;">
+			<button type="submit" class="btn btn-danger">Clear Chat</button>
+		</form>
+
 	</div>
 
 </div>
 
-<!-- 🔥 COUNTER -->
+<!-- COUNTER -->
 <div style="margin-top:20px; text-align:center;">
 	<b>
 		Total Messages Processed:
@@ -118,12 +133,35 @@
 	</b>
 </div>
 
+<!-- TOAST -->
+<div id="toast" style="
+	position: fixed;
+	bottom: 20px;
+	right: 20px;
+	background: #ffc107;
+	padding: 15px 20px;
+	border-radius: 10px;
+	display: none;
+	font-weight: bold;
+	z-index: 999;
+"></div>
+
 <script>
 
 	const chatBox = document.getElementById("chatBox")
 
 	function scrollBottom() {
 		chatBox.scrollTop = chatBox.scrollHeight
+	}
+
+	function showToast(message) {
+		const toast = document.getElementById("toast")
+		toast.innerText = message
+		toast.style.display = "block"
+
+		setTimeout(() => {
+			toast.style.display = "none"
+		}, 3000)
 	}
 
 	document.getElementById("messageInput")
@@ -196,6 +234,17 @@
 
 			const chunk = decoder.decode(value)
 
+			// TOAST LOGIC
+			if (chunk.includes("Mesaje rămase: 15")) {
+				showToast("Atenție: Mai ai doar 15 mesaje disponibile pentru astăzi!")
+			}
+			if (chunk.includes("Mesaje rămase: 10")) {
+				showToast("Atenție: Mai ai doar 10 mesaje disponibile pentru astăzi!")
+			}
+			if (chunk.includes("Mesaje rămase: 5")) {
+				showToast("Atenție: Mai ai doar 5 mesaje disponibile pentru astăzi!")
+			}
+
 			result += chunk
 
 			if (result.includes("===DECORATED===")) {
@@ -208,12 +257,50 @@
 			scrollBottom()
 		}
 
-		// 🔥 ACTUALIZĂM COUNTER REAL
 		await updateCounter()
-
 		scrollBottom()
 	}
 
 	scrollBottom()
+
+		async function regenerate() {
+
+		const response = await fetch("/Chat/Regenerate", {
+			method: "POST"
+		})
+
+		const reader = response.body.getReader()
+		const decoder = new TextDecoder()
+
+		let result = ""
+
+		const aiDiv = document.createElement("div")
+		aiDiv.className = "message-ai"
+
+		const bubble = document.createElement("div")
+		bubble.className = "bubble-ai"
+
+		aiDiv.appendChild(bubble)
+		chatBox.appendChild(aiDiv)
+
+		while (true) {
+
+			const { done, value } = await reader.read()
+			if (done) break
+
+			const chunk = decoder.decode(value)
+
+			result += chunk
+
+			if (result.includes("===DECORATED===")) {
+				const parts = result.split("===DECORATED===")
+				bubble.innerHTML = parts[1]
+			} else {
+				bubble.innerText = result
+			}
+
+			scrollBottom()
+		}
+	}
 
 </script>

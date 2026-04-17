@@ -16,5 +16,11 @@ namespace AIAssistant.Core.Services
         {
             return _messages;
         }
+
+        // NECESAR pentru Command
+        public void Clear()
+        {
+            _messages.Clear();
+        }
     }
 }
