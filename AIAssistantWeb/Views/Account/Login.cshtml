@@ -1,0 +1,33 @@
+﻿@model AIAssistantWeb.Models.Auth.LoginViewModel
+
+<h2>Login</h2>
+
+<form method="post">
+
+    <input asp-for="Username"
+           class="form-control mb-3"
+           placeholder="Username" />
+
+    <input asp-for="Password"
+           type="password"
+           class="form-control mb-3"
+           placeholder="Password" />
+
+    <button type="submit"
+            class="btn btn-primary">
+        Login
+    </button>
+
+    <a href="/Account/Register"
+           class="btn btn-secondary">
+        Register
+    </a>
+
+</form>
+
+@if (ViewBag.Error != null)
+{
+    <div class="alert alert-danger mt-3">
+        @ViewBag.Error
+    </div>
+}

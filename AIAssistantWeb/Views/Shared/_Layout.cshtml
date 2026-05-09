@@ -18,7 +18,9 @@
         <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
 
-                <a class="navbar-brand" asp-controller="Home" asp-action="Index">
+                <a class="navbar-brand"
+                       asp-controller="Home"
+                       asp-action="Index">
                     AIAssistantWeb
                 </a>
 
@@ -35,35 +37,45 @@
 
                         <li class="nav-item">
                             <a class="nav-link text-dark"
-                               asp-controller="Home"
-                               asp-action="Index">
+                                   asp-controller="Home"
+                                   asp-action="Index">
                                 Home
                             </a>
                         </li>
 
                         <li class="nav-item">
                             <a class="nav-link text-dark"
-                               asp-controller="Home"
-                               asp-action="CreateProfile">
+                                   asp-controller="Home"
+                                   asp-action="CreateProfile">
                                 Create Assistant
                             </a>
                         </li>
 
                         <li class="nav-item">
                             <a class="nav-link text-dark"
-                               asp-controller="Chat"
-                               asp-action="Index">
+                                   asp-controller="Chat"
+                                   asp-action="Index">
                                 Chat
                             </a>
                         </li>
 
                         <li class="nav-item">
                             <a class="nav-link text-dark"
-                               asp-controller="Home"
-                               asp-action="Privacy">
+                                   asp-controller="Home"
+                                   asp-action="Privacy">
                                 Privacy
                             </a>
                         </li>
+
+                        @if (User.Identity != null && User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark"
+                                       href="/Account/Logout">
+                                    Logout (@User.Identity.Name)
+                                </a>
+                            </li>
+                        }
 
                     </ul>
 
@@ -84,7 +96,9 @@
         <div class="container py-3">
 
             © 2026 - AIAssistantWeb -
-            <a asp-controller="Home" asp-action="Privacy">Privacy</a>
+            <a asp-controller="Home" asp-action="Privacy">
+                Privacy
+            </a>
 
             <br />
 

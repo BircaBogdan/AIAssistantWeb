@@ -1,28 +1,40 @@
-﻿using System.Text.Json;
-
-using AIAssistant.Core.Adapters;
-using AIAssistant.Core.Facades;
-using AIAssistant.Core.Models;
-using AIAssistant.Core.Services;
+﻿using AIAssistant.Core.Adapters;
 using AIAssistant.Core.Commands;
+using AIAssistant.Core.Facades;
 using AIAssistant.Core.Proxies;
+using AIAssistant.Core.Services;
 
+using AIAssistantWeb.Data;
+
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AIAssistantWeb.Controllers
 {
+    [Authorize]
     public class ChatController : Controller
     {
         private readonly ChatHistory _history;
 
-        public ChatController(ChatHistory history)
+        private readonly ApplicationDbContext _db;
+
+        public ChatController(
+            ChatHistory history,
+            ApplicationDbContext db)
         {
             _history = history;
+            _db = db;
         }
 
         public IActionResult Index()
         {
-            ViewBag.Profiles = HomeController.Profiles;
+            var username = User.Identity!.Name!;
+
+            var profiles = _db.AssistantProfiles
+                .Where(x => x.Username == username)
+                .ToList();
+
+            ViewBag.Profiles = profiles;
 
             ViewBag.IsLimitReached = ChatRateLimitProxy.IsLimitReached;
 
@@ -35,20 +47,28 @@ namespace AIAssistantWeb.Controllers
             HttpContext.Session.SetString("lastMessage", message);
             HttpContext.Session.SetString("assistantName", assistantName);
 
-            var profile = HomeController.Profiles
-                .FirstOrDefault(p => p.Name == assistantName);
+            var username = User.Identity!.Name!;
+
+            var profile = _db.AssistantProfiles
+                .FirstOrDefault(p =>
+                    p.Name == assistantName &&
+                    p.Username == username);
 
             if (profile == null)
             {
                 Response.StatusCode = 400;
+
                 await Response.WriteAsync("Profile not found");
+
                 return;
             }
 
             double temperature = profile.Temperature;
 
             IAIService ai = new OllamaAdapter();
+
             var proxy = new ChatRateLimitProxy(ai);
+
             var facade = new ChatFacade(proxy, _history);
 
             Response.Headers.Append("Content-Type", "text/plain");
@@ -61,6 +81,7 @@ namespace AIAssistantWeb.Controllers
                 async token =>
                 {
                     await Response.WriteAsync(token);
+
                     await Response.Body.FlushAsync();
                 });
 
@@ -71,13 +92,18 @@ namespace AIAssistantWeb.Controllers
         public async Task<IActionResult> Regenerate()
         {
             var message = HttpContext.Session.GetString("lastMessage");
+
             var assistantName = HttpContext.Session.GetString("assistantName");
 
             if (message == null || assistantName == null)
                 return RedirectToAction("Index");
 
-            var profile = HomeController.Profiles
-                .FirstOrDefault(p => p.Name == assistantName);
+            var username = User.Identity!.Name!;
+
+            var profile = _db.AssistantProfiles
+                .FirstOrDefault(p =>
+                    p.Name == assistantName &&
+                    p.Username == username);
 
             if (profile == null)
                 return RedirectToAction("Index");
@@ -85,7 +111,9 @@ namespace AIAssistantWeb.Controllers
             double temperature = profile.Temperature;
 
             IAIService ai = new OllamaAdapter();
+
             var proxy = new ChatRateLimitProxy(ai);
+
             var facade = new ChatFacade(proxy, _history);
 
             Response.Headers.Append("Content-Type", "text/plain");
@@ -98,6 +126,7 @@ namespace AIAssistantWeb.Controllers
                 async token =>
                 {
                     await Response.WriteAsync(token);
+
                     await Response.Body.FlushAsync();
                 });
 
@@ -110,13 +139,15 @@ namespace AIAssistantWeb.Controllers
         public IActionResult Clear()
         {
             _history.Clear();
+
             return RedirectToAction("Index");
         }
 
         [HttpGet]
         public IActionResult GetMessageCount()
         {
-            return Content(GlobalMetrics.Instance.TotalMessages.ToString());
+            return Content(
+                GlobalMetrics.Instance.TotalMessages.ToString());
         }
     }
 }

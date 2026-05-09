@@ -1,33 +1,37 @@
-﻿using AIAssistant.Core.Interfaces;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+using AIAssistant.Core.Interfaces;
 
 namespace AIAssistant.Core.Models
 {
     public class AssistantProfile : IPrototype<AssistantProfile>
     {
-        public string Name { get; set; }
+        public int Id { get; set; }
 
-        public string SystemPrompt { get; set; }
+        public string Username { get; set; } = string.Empty;
+
+        public string Name { get; set; } = string.Empty;
+
+        public string SystemPrompt { get; set; } = string.Empty;
 
         public double Temperature { get; set; }
 
-        public IResponseStrategy ResponseStrategy { get; set; }
+        [NotMapped]
+        public IResponseStrategy? ResponseStrategy { get; set; }
 
+        [NotMapped]
         public List<string> EnabledPlugins { get; set; } = new();
 
         public AssistantProfile Clone()
         {
             var clone = (AssistantProfile)this.MemberwiseClone();
 
-            // deep copy pentru lista
             clone.EnabledPlugins = new List<string>(EnabledPlugins);
 
-            // păstrează temperatura
             clone.Temperature = this.Temperature;
 
-            // păstrează strategia
             clone.ResponseStrategy = this.ResponseStrategy;
 
-            // schimbă numele
             clone.Name = this.Name + " (Copy)";
 
             return clone;
