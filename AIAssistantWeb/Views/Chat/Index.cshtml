@@ -238,17 +238,19 @@
 			button.className = "btn btn-danger"
 		}
 
-		else if (state === "limit") {
+			else if (state === "limit") {
 
-			button.disabled = true
-			input.disabled = true
+		button.disabled = true
+		input.disabled = true
 
-			button.innerText = "Limit Reached"
-			button.className = "btn btn-dark"
-		}
+		button.innerText = "Limit Reached"
+		button.className = "btn btn-danger"
+	}
 	}
 
 	async function sendMessage() {
+
+			let limitReached = false
 
 		const message = document.getElementById("messageInput").value
 		const assistant = document.getElementById("assistantName").value
@@ -327,7 +329,9 @@
 
 			result += chunk
 
-				if (chunk.includes("LIMIT_REACHED")) {
+					if (chunk.includes("LIMIT_REACHED")) {
+
+		limitReached = true
 
 		setChatState("limit")
 
@@ -344,7 +348,9 @@
 			scrollBottom()
 		}
 
-			setChatState("ready")
+				if (!limitReached) {
+		setChatState("ready")
+	}
 
 	await updateCounter()
 	scrollBottom()

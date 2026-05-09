@@ -1,4 +1,6 @@
 ﻿using AIAssistant.Core.Models;
+using AIAssistant.Core.Utilities;
+
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -11,16 +13,20 @@ namespace AIAssistant.Core.Exporters
         {
             var lines = new List<string>();
 
-            lines.Add("AI Assistant Conversation");
-            lines.Add("");
-
             foreach (var msg in messages)
             {
                 var role = msg.IsUser ? "USER" : "AI";
 
                 lines.Add($"[{msg.Timestamp:HH:mm:ss}] {role}");
-                lines.Add(msg.Text);
-                lines.Add("--------------------------------");
+                lines.Add("");
+
+                var cleanText = HtmlCleaner.Clean(msg.Text);
+
+                lines.Add(cleanText);
+
+                lines.Add("");
+                lines.Add("----------------------------------------");
+                lines.Add("");
             }
 
             return string.Join("\n", lines);
@@ -38,12 +44,13 @@ namespace AIAssistant.Core.Exporters
 
                     page.Header()
                         .Text("AI Assistant Conversation")
-                        .FontSize(20)
+                        .FontSize(22)
                         .Bold();
 
                     page.Content()
                         .PaddingVertical(10)
-                        .Text(content);
+                        .Text(content)
+                        .FontSize(12);
 
                     page.Footer()
                         .AlignCenter()
