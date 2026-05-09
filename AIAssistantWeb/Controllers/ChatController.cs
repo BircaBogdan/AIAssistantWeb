@@ -23,6 +23,9 @@ namespace AIAssistantWeb.Controllers
         public IActionResult Index()
         {
             ViewBag.Profiles = HomeController.Profiles;
+
+            ViewBag.IsLimitReached = ChatRateLimitProxy.IsLimitReached;
+
             return View(_history.GetAll());
         }
 
@@ -48,13 +51,13 @@ namespace AIAssistantWeb.Controllers
             var proxy = new ChatRateLimitProxy(ai);
             var facade = new ChatFacade(proxy, _history);
 
-            Response.Headers.Add("Content-Type", "text/plain");
+            Response.Headers.Append("Content-Type", "text/plain");
 
             var command = new SendMessageCommand(
                 facade,
                 message,
                 temperature,
-                false, // NORMAL
+                false,
                 async token =>
                 {
                     await Response.WriteAsync(token);
@@ -85,13 +88,13 @@ namespace AIAssistantWeb.Controllers
             var proxy = new ChatRateLimitProxy(ai);
             var facade = new ChatFacade(proxy, _history);
 
-            Response.Headers.Add("Content-Type", "text/plain");
+            Response.Headers.Append("Content-Type", "text/plain");
 
             var command = new SendMessageCommand(
                 facade,
                 message,
                 temperature,
-                true, // REGENERATE (FREE)
+                true,
                 async token =>
                 {
                     await Response.WriteAsync(token);

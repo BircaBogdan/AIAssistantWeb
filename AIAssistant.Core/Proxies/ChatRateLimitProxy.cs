@@ -22,8 +22,11 @@ namespace AIAssistant.Core.Proxies
 
             _subject.Attach(_observer);
         }
+        public static bool IsLimitReached => _messageCount >= 20;
 
-        // metoda cerută de interfață (OBLIGATORIE)
+        public static int CurrentCount => _messageCount;
+
+        // metoda cerută de interfață
         public async IAsyncEnumerable<string> SendMessageStream(string message, double temperature)
         {
             await foreach (var token in SendMessageStream(message, temperature, false))
@@ -32,18 +35,20 @@ namespace AIAssistant.Core.Proxies
             }
         }
 
-        // metoda extinsă (pentru regenerate)
+        // metoda extinsă
         public async IAsyncEnumerable<string> SendMessageStream(string message, double temperature, bool isRegenerate)
         {
             if (!isRegenerate)
             {
                 if (_messageCount >= _limit)
                 {
+                    yield return "LIMIT_REACHED";
                     yield return "\n\n🚫 LIMITĂ ATINSĂ (20 mesaje gratuite)\n";
                     yield break;
                 }
 
                 _messageCount++;
+
                 _subject.SetMessageCount(_messageCount);
             }
 

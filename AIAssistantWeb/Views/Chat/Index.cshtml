@@ -107,15 +107,39 @@
 		</select>
 
 		<div class="input-group">
-			<input id="messageInput" class="form-control" placeholder="Type a message...">
-			<button onclick="sendMessage()" class="btn btn-primary">
-				Send
+
+			<input id="messageInput"
+				   class="form-control"
+				   placeholder="Type a message...">
+
+			<button id="sendButton"
+					onclick="sendMessage()"
+					class="btn @(ViewBag.IsLimitReached ? "btn-danger" : "btn-primary")"
+				@(ViewBag.IsLimitReached ? "disabled" : "")>
+
+				@(ViewBag.IsLimitReached ? "Limit Reached" : "Send")
+
 			</button>
+
 		</div>
 
 		<button onclick="regenerate()" class="btn btn-warning" style="margin-top:10px;">
 			Regenerate
 		</button>
+
+		<div style="margin-top:10px;">
+
+			<a href="/Export/ExportTxt"
+				   class="btn btn-success">
+				Export TXT
+			</a>
+
+			<a href="/Export/ExportPdf"
+				   class="btn btn-secondary">
+				Export PDF
+			</a>
+
+		</div>
 
 		<form method="post" asp-action="Clear" style="margin-top:5px;">
 			<button type="submit" class="btn btn-danger">Clear Chat</button>
@@ -182,12 +206,56 @@
 		}
 	}
 
+		function setChatState(state) {
+
+		const button = document.getElementById("sendButton")
+		const input = document.getElementById("messageInput")
+
+		if (state === "waiting") {
+
+			button.disabled = true
+			input.disabled = true
+
+			button.innerText = "AI is typing..."
+			button.className = "btn btn-secondary"
+		}
+
+		else if (state === "ready") {
+
+			button.disabled = false
+			input.disabled = false
+
+			button.innerText = "Send"
+			button.className = "btn btn-primary"
+		}
+
+		else if (state === "error") {
+
+			button.disabled = false
+			input.disabled = false
+
+			button.innerText = "Retry"
+			button.className = "btn btn-danger"
+		}
+
+		else if (state === "limit") {
+
+			button.disabled = true
+			input.disabled = true
+
+			button.innerText = "Limit Reached"
+			button.className = "btn btn-dark"
+		}
+	}
+
 	async function sendMessage() {
 
 		const message = document.getElementById("messageInput").value
 		const assistant = document.getElementById("assistantName").value
 
 		if (!message) return
+
+		setChatState("waiting")
 
 		const userDiv = document.createElement("div")
 		userDiv.className = "message-user"
@@ -203,13 +271,25 @@
 
 		scrollBottom()
 
-		const response = await fetch("/Chat/Stream", {
+			let response
+
+	try {
+
+		response = await fetch("/Chat/Stream", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/x-www-form-urlencoded"
 			},
 			body: `message=${encodeURIComponent(message)}&assistantName=${assistant}`
 		})
+
+			}
+	catch {
+
+		setChatState("error")
+		showToast("Eroare la comunicarea cu AI")
+		return
+	}
 
 		const reader = response.body.getReader()
 		const decoder = new TextDecoder()
@@ -247,6 +327,13 @@
 
 			result += chunk
 
+				if (chunk.includes("LIMIT_REACHED")) {
+
+		setChatState("limit")
+
+		result = result.replace("LIMIT_REACHED", "")
+	}
+
 			if (result.includes("===DECORATED===")) {
 				const parts = result.split("===DECORATED===")
 				bubble.innerHTML = parts[1]
@@ -257,8 +344,10 @@
 			scrollBottom()
 		}
 
-		await updateCounter()
-		scrollBottom()
+			setChatState("ready")
+
+	await updateCounter()
+	scrollBottom()
 	}
 
 	scrollBottom()
